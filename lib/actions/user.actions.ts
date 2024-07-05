@@ -18,19 +18,42 @@ const {
 
 export const getUserInfo = async ({ userId }: getUserInfoProps) => {
   try {
-    const { database } = await createAdminClient();
+    console.log('Fetching user info for userId:', userId); // Log the userId
 
+    const { database } = await createAdminClient();
+    
+    // Check if the database and collection IDs are correctly set
+    console.log('DATABASE_ID:', DATABASE_ID);
+    console.log('USER_COLLECTION_ID:', USER_COLLECTION_ID);
+
+    // Log the full collection schema if possible (for debugging)
+    const schema = await database.getCollection(DATABASE_ID!, USER_COLLECTION_ID!);
+    console.log('Collection Schema:', schema);
+    // Validate that 'userId' exists in the schema
+    const attributeNames = schema.attributes.map((attr: any) => attr.key);
+    if (!attributeNames.includes('userId')) {
+      throw new Error('userId attribute not found in schema');
+    }
+    // Query using userId
     const user = await database.listDocuments(
       DATABASE_ID!,
       USER_COLLECTION_ID!,
       [Query.equal('userId', [userId])]
-    )
+    );
+
+    console.log('Database query result:', user); // Log the query result
+
+    if (user.documents.length === 0) {
+      console.log('No user found with userId:', userId);
+      return null;
+    }
 
     return parseStringify(user.documents[0]);
   } catch (error) {
-    console.log(error)
+    console.log('Error in getUserInfo:', error);
+    return null;
   }
-}
+};
 
 export const signIn = async ({ email, password }: signInProps) => {
   try {
